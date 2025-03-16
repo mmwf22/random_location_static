@@ -15,7 +15,7 @@
     form {
       margin: 20px;
     }
-    label, input {
+    label, input, select {
       margin: 5px;
     }
     #map {
@@ -29,12 +29,20 @@
       font-weight: bold;
     }
   </style>
-  <!-- Optional: Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
   <h1>Zufällige Kartenposition</h1>
   <form id="coordinatesForm">
+    <div>
+      <label for="countrySelect">Land auswählen:</label>
+      <select id="countrySelect">
+        <option value="">-- Kein Land (benutzerdefiniert) --</option>
+        <option value="Deutschland">Deutschland</option>
+        <option value="USA">USA</option>
+        <option value="Frankreich">Frankreich</option>
+      </select>
+    </div>
     <div>
       <label>
         Minimale Breite (-90 bis 90):
@@ -63,6 +71,13 @@
   
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
+    // Vordefinierte Bounding-Boxen für ausgewählte Länder
+    var countryBounds = {
+      "Deutschland": {lat_min: 47.3, lat_max: 55.1, lon_min: 5.9, lon_max: 15.0},
+      "USA": {lat_min: 24.396308, lat_max: 49.384358, lon_min: -125.0, lon_max: -66.93457},
+      "Frankreich": {lat_min: 41.0, lat_max: 51.1, lon_min: -5.0, lon_max: 9.6}
+    };
+
     // Initialisiere die Karte (Startansicht: globale Perspektive)
     var map = L.map('map').setView([0, 0], 2);
     
@@ -71,20 +86,33 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
     
-    // Layer-Referenzen für Rectangle und Marker, um sie bei neuen Aktionen zu entfernen
+    // Referenzen für das Rechteck und den Marker
     var rectangleLayer = null;
     var markerLayer = null;
     
+    // Länder-Dropdown: Aktualisiert die Eingabefelder, wenn ein Land ausgewählt wird
+    document.getElementById('countrySelect').addEventListener('change', function() {
+      var country = this.value;
+      if (country && countryBounds[country]) {
+        var bounds = countryBounds[country];
+        document.getElementById('lat_min').value = bounds.lat_min;
+        document.getElementById('lat_max').value = bounds.lat_max;
+        document.getElementById('lon_min').value = bounds.lon_min;
+        document.getElementById('lon_max').value = bounds.lon_max;
+      }
+    });
+    
+    // Formularverarbeitung
     document.getElementById('coordinatesForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
-      // Lese und parse die Eingabewerte
+      // Werte aus den Eingabefeldern lesen
       var latMin = parseFloat(document.getElementById('lat_min').value);
       var latMax = parseFloat(document.getElementById('lat_max').value);
       var lonMin = parseFloat(document.getElementById('lon_min').value);
       var lonMax = parseFloat(document.getElementById('lon_max').value);
       
-      // Sicherstellen, dass Min und Max korrekt angeordnet sind
+      // Reihenfolge der Werte prüfen
       if (latMin > latMax) { [latMin, latMax] = [latMax, latMin]; }
       if (lonMin > lonMax) { [lonMin, lonMax] = [lonMax, lonMin]; }
       
@@ -101,14 +129,14 @@
         map.removeLayer(markerLayer);
       }
       
-      // Zeichne ein transparentes rotes Rechteck als Bereichsmarker
+      // Zeichne ein transparentes rotes Rechteck als Kennzeichnung des Bereichs
       rectangleLayer = L.rectangle([[latMin, lonMin], [latMax, lonMax]], {
         color: "red",
         weight: 2,
         fillOpacity: 0.2
       }).addTo(map);
       
-      // Generiere zufällige Koordinaten innerhalb des Bereichs
+      // Zufällige Koordinaten innerhalb des Bereichs generieren
       var randomLat = Math.random() * (latMax - latMin) + latMin;
       var randomLon = Math.random() * (lonMax - lonMin) + lonMin;
       
@@ -117,7 +145,7 @@
         .bindPopup("Zufällige Position: " + randomLat.toFixed(4) + ", " + randomLon.toFixed(4))
         .openPopup();
       
-      // Zeige das Ergebnis
+      // Ergebnis anzeigen
       document.getElementById('result').innerText = "Zufällige Position: " + randomLat.toFixed(4) + ", " + randomLon.toFixed(4);
     });
   </script>
