@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zufällige Kartenposition</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    form {
+      margin: 20px;
+    }
+    label, input {
+      margin: 5px;
+    }
+    #map {
+      width: 80%;
+      height: 500px;
+      margin: auto;
+      border: 1px solid #ccc;
+    }
+    #result {
+      margin: 10px;
+      font-weight: bold;
+    }
+  </style>
+  <!-- Optional: Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <h1>Zufällige Kartenposition</h1>
+  <form id="coordinatesForm">
+    <div>
+      <label>
+        Minimale Breite (-90 bis 90):
+        <input id="lat_min" type="number" step="0.01" name="lat_min" value="-90" min="-90" max="90" required>
+      </label>
+      <label>
+        Maximale Breite (-90 bis 90):
+        <input id="lat_max" type="number" step="0.01" name="lat_max" value="90" min="-90" max="90" required>
+      </label>
+    </div>
+    <div>
+      <label>
+        Minimale Länge (-180 bis 180):
+        <input id="lon_min" type="number" step="0.01" name="lon_min" value="-180" min="-180" max="180" required>
+      </label>
+      <label>
+        Maximale Länge (-180 bis 180):
+        <input id="lon_max" type="number" step="0.01" name="lon_max" value="180" min="-180" max="180" required>
+      </label>
+    </div>
+    <button type="submit">Zufällige Position generieren</button>
+  </form>
+  
+  <div id="map"></div>
+  <p id="result"></p>
+  
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    // Initialisiere die Karte (Startansicht: globale Perspektive)
+    var map = L.map('map').setView([0, 0], 2);
+    
+    // OpenStreetMap-Tiles hinzufügen
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Layer-Referenzen für Rectangle und Marker, um sie bei neuen Aktionen zu entfernen
+    var rectangleLayer = null;
+    var markerLayer = null;
+    
+    document.getElementById('coordinatesForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Lese und parse die Eingabewerte
+      var latMin = parseFloat(document.getElementById('lat_min').value);
+      var latMax = parseFloat(document.getElementById('lat_max').value);
+      var lonMin = parseFloat(document.getElementById('lon_min').value);
+      var lonMax = parseFloat(document.getElementById('lon_max').value);
+      
+      // Sicherstellen, dass Min und Max korrekt angeordnet sind
+      if (latMin > latMax) { [latMin, latMax] = [latMax, latMin]; }
+      if (lonMin > lonMax) { [lonMin, lonMax] = [lonMax, lonMin]; }
+      
+      // Mittelpunkt des definierten Bereichs berechnen
+      var centerLat = (latMin + latMax) / 2;
+      var centerLon = (lonMin + lonMax) / 2;
+      map.setView([centerLat, centerLon], 4);
+      
+      // Vorherige Rechtecke und Marker entfernen
+      if (rectangleLayer) {
+        map.removeLayer(rectangleLayer);
+      }
+      if (markerLayer) {
+        map.removeLayer(markerLayer);
+      }
+      
+      // Zeichne ein transparentes rotes Rechteck als Bereichsmarker
+      rectangleLayer = L.rectangle([[latMin, lonMin], [latMax, lonMax]], {
+        color: "red",
+        weight: 2,
+        fillOpacity: 0.2
+      }).addTo(map);
+      
+      // Generiere zufällige Koordinaten innerhalb des Bereichs
+      var randomLat = Math.random() * (latMax - latMin) + latMin;
+      var randomLon = Math.random() * (lonMax - lonMin) + lonMin;
+      
+      // Marker am zufälligen Punkt platzieren
+      markerLayer = L.marker([randomLat, randomLon]).addTo(map)
+        .bindPopup("Zufällige Position: " + randomLat.toFixed(4) + ", " + randomLon.toFixed(4))
+        .openPopup();
+      
+      // Zeige das Ergebnis
+      document.getElementById('result').innerText = "Zufällige Position: " + randomLat.toFixed(4) + ", " + randomLon.toFixed(4);
+    });
+  </script>
+</body>
+</html>
