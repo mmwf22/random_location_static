@@ -24,9 +24,12 @@
       margin: auto;
       border: 1px solid #ccc;
     }
-    #result {
+    #result, #mouseCoordinates {
       margin: 10px;
       font-weight: bold;
+    }
+    #mouseCoordinates {
+      font-family: monospace;
     }
   </style>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -67,6 +70,7 @@
   </form>
   
   <div id="map"></div>
+  <div id="mouseCoordinates">Mouse: --</div>
   <p id="result"></p>
   
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -147,6 +151,13 @@
       
       // Ergebnis anzeigen
       document.getElementById('result').innerText = "Zufällige Position: " + randomLat.toFixed(4) + ", " + randomLon.toFixed(4);
+    });
+
+    // Aktualisiere die Mauskoordinaten in Echtzeit
+    map.on('mousemove', function(e) {
+      var lat = e.latlng.lat.toFixed(4);
+      var lng = e.latlng.lng.toFixed(4);
+      document.getElementById('mouseCoordinates').innerText = 'Mouse: ' + lat + ', ' + lng;
     });
   </script>
 </body>
