@@ -6,16 +6,16 @@
   <title>Zufällige Kartenposition</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      margin: 0; 
+      padding: 0; 
     }
-    form {
-      margin: 20px;
+    form { 
+      margin: 20px; 
     }
-    label, input, select {
+    label, input {
       margin: 5px;
     }
     #map {
@@ -28,7 +28,7 @@
       margin: 10px;
       font-weight: bold;
     }
-    #mouseCoordinates {
+    #mouseCoordinates { 
       font-family: monospace;
     }
   </style>
@@ -37,15 +37,6 @@
 <body>
   <h1>Zufällige Kartenposition</h1>
   <form id="coordinatesForm">
-    <div>
-      <label for="countrySelect">Land auswählen:</label>
-      <select id="countrySelect">
-        <option value="">-- Kein Land (benutzerdefiniert) --</option>
-        <option value="Deutschland">Deutschland</option>
-        <option value="USA">USA</option>
-        <option value="Frankreich">Frankreich</option>
-      </select>
-    </div>
     <div>
       <label>
         Minimale Breite (-90 bis 90):
@@ -75,13 +66,6 @@
   
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    // Vordefinierte Bounding-Boxen für ausgewählte Länder
-    var countryBounds = {
-      "Deutschland": {lat_min: 47.3, lat_max: 55.1, lon_min: 5.9, lon_max: 15.0},
-      "USA": {lat_min: 24.396308, lat_max: 49.384358, lon_min: -125.0, lon_max: -66.93457},
-      "Frankreich": {lat_min: 41.0, lat_max: 51.1, lon_min: -5.0, lon_max: 9.6}
-    };
-
     // Initialisiere die Karte (Startansicht: globale Perspektive)
     var map = L.map('map').setView([0, 0], 2);
     
@@ -90,50 +74,34 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
     
-    // Referenzen für das Rechteck und den Marker
+    // Referenzen für Rechteck und Marker, damit sie bei neuen Aktionen entfernt werden können
     var rectangleLayer = null;
     var markerLayer = null;
-    
-    // Länder-Dropdown: Aktualisiert die Eingabefelder, wenn ein Land ausgewählt wird
-    document.getElementById('countrySelect').addEventListener('change', function() {
-      var country = this.value;
-      if (country && countryBounds[country]) {
-        var bounds = countryBounds[country];
-        document.getElementById('lat_min').value = bounds.lat_min;
-        document.getElementById('lat_max').value = bounds.lat_max;
-        document.getElementById('lon_min').value = bounds.lon_min;
-        document.getElementById('lon_max').value = bounds.lon_max;
-      }
-    });
     
     // Formularverarbeitung
     document.getElementById('coordinatesForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
-      // Werte aus den Eingabefeldern lesen
+      // Werte aus den Eingabefeldern auslesen
       var latMin = parseFloat(document.getElementById('lat_min').value);
       var latMax = parseFloat(document.getElementById('lat_max').value);
       var lonMin = parseFloat(document.getElementById('lon_min').value);
       var lonMax = parseFloat(document.getElementById('lon_max').value);
       
-      // Reihenfolge der Werte prüfen
+      // Sicherstellen, dass Minimal- und Maximalwerte korrekt angeordnet sind
       if (latMin > latMax) { [latMin, latMax] = [latMax, latMin]; }
       if (lonMin > lonMax) { [lonMin, lonMax] = [lonMax, lonMin]; }
       
-      // Mittelpunkt des definierten Bereichs berechnen
+      // Mittelpunkt des Bereichs berechnen und Karte darauf zentrieren
       var centerLat = (latMin + latMax) / 2;
       var centerLon = (lonMin + lonMax) / 2;
       map.setView([centerLat, centerLon], 4);
       
       // Vorherige Rechtecke und Marker entfernen
-      if (rectangleLayer) {
-        map.removeLayer(rectangleLayer);
-      }
-      if (markerLayer) {
-        map.removeLayer(markerLayer);
-      }
+      if (rectangleLayer) { map.removeLayer(rectangleLayer); }
+      if (markerLayer) { map.removeLayer(markerLayer); }
       
-      // Zeichne ein transparentes rotes Rechteck als Kennzeichnung des Bereichs
+      // Zeichne ein transparentes rotes Rechteck als Bereichsmarkierung
       rectangleLayer = L.rectangle([[latMin, lonMin], [latMax, lonMax]], {
         color: "red",
         weight: 2,
@@ -144,19 +112,19 @@
       var randomLat = Math.random() * (latMax - latMin) + latMin;
       var randomLon = Math.random() * (lonMax - lonMin) + lonMin;
       
-      // Marker am zufälligen Punkt platzieren
+      // Marker am zufälligen Punkt setzen
       markerLayer = L.marker([randomLat, randomLon]).addTo(map)
-        .bindPopup("Zufällige Position: " + randomLat.toFixed(4) + ", " + randomLon.toFixed(4))
+        .bindPopup("Zufällige Position: " + randomLat.toFixed(2) + ", " + randomLon.toFixed(2))
         .openPopup();
       
       // Ergebnis anzeigen
-      document.getElementById('result').innerText = "Zufällige Position: " + randomLat.toFixed(4) + ", " + randomLon.toFixed(4);
+      document.getElementById('result').innerText = "Zufällige Position: " + randomLat.toFixed(2) + ", " + randomLon.toFixed(2);
     });
-
-    // Aktualisiere die Mauskoordinaten in Echtzeit
+    
+    // Anzeige der Mauskoordinaten in Echtzeit
     map.on('mousemove', function(e) {
-      var lat = e.latlng.lat.toFixed(4);
-      var lng = e.latlng.lng.toFixed(4);
+      var lat = e.latlng.lat.toFixed(2);
+      var lng = e.latlng.lng.toFixed(2);
       document.getElementById('mouseCoordinates').innerText = 'Mouse: ' + lat + ', ' + lng;
     });
   </script>
