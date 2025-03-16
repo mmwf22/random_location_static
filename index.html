@@ -6,16 +6,16 @@
   <title>Zufällige Kartenposition</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      text-align: center; 
-      margin: 0; 
-      padding: 0; 
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
     }
-    form { 
-      margin: 20px; 
+    form {
+      margin: 20px;
     }
-    label, input {
+    label, input, select {
       margin: 5px;
     }
     #map {
@@ -28,7 +28,7 @@
       margin: 10px;
       font-weight: bold;
     }
-    #mouseCoordinates { 
+    #mouseCoordinates {
       font-family: monospace;
     }
   </style>
@@ -37,6 +37,12 @@
 <body>
   <h1>Zufällige Kartenposition</h1>
   <form id="coordinatesForm">
+    <div>
+      <label for="countrySelect">Land auswählen:</label>
+      <select id="countrySelect">
+        <option value="">-- Kein Land (benutzerdefiniert) --</option>
+      </select>
+    </div>
     <div>
       <label>
         Minimale Breite (-90 bis 90):
@@ -66,62 +72,83 @@
   
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    // Initialisiere die Karte (Startansicht: globale Perspektive)
-    var map = L.map('map').setView([0, 0], 2);
+    // Globale Variable, um die Länder-Daten zu speichern
+    var countryBounds = {};
     
-    // OpenStreetMap-Tiles hinzufügen
+    // Länder-Daten aus der JSON-Datei laden
+    fetch('countries.json')
+      .then(response => response.json())
+      .then(data => {
+        countryBounds = data;
+        var countrySelect = document.getElementById('countrySelect');
+        // Dropdown mit Ländern befüllen
+        countrySelect.innerHTML = '<option value="">-- Kein Land (benutzerdefiniert) --</option>';
+        for (var country in data) {
+          var option = document.createElement('option');
+          option.value = country;
+          option.textContent = country;
+          countrySelect.appendChild(option);
+        }
+      })
+      .catch(error => console.error('Fehler beim Laden der Länder-Daten:', error));
+    
+    // Initialisiere die Karte (globale Ansicht)
+    var map = L.map('map').setView([0, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
     
-    // Referenzen für Rechteck und Marker, damit sie bei neuen Aktionen entfernt werden können
     var rectangleLayer = null;
     var markerLayer = null;
     
-    // Formularverarbeitung
+    // Wenn ein Land ausgewählt wird, aktualisiere die Eingabefelder
+    document.getElementById('countrySelect').addEventListener('change', function() {
+      var country = this.value;
+      if (country && countryBounds[country]) {
+        var bounds = countryBounds[country];
+        document.getElementById('lat_min').value = bounds.lat_min;
+        document.getElementById('lat_max').value = bounds.lat_max;
+        document.getElementById('lon_min').value = bounds.lon_min;
+        document.getElementById('lon_max').value = bounds.lon_max;
+      }
+    });
+    
+    // Formularverarbeitung: Zeichnet das Rechteck und generiert eine zufällige Position
     document.getElementById('coordinatesForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
-      // Werte aus den Eingabefeldern auslesen
       var latMin = parseFloat(document.getElementById('lat_min').value);
       var latMax = parseFloat(document.getElementById('lat_max').value);
       var lonMin = parseFloat(document.getElementById('lon_min').value);
       var lonMax = parseFloat(document.getElementById('lon_max').value);
       
-      // Sicherstellen, dass Minimal- und Maximalwerte korrekt angeordnet sind
       if (latMin > latMax) { [latMin, latMax] = [latMax, latMin]; }
       if (lonMin > lonMax) { [lonMin, lonMax] = [lonMax, lonMin]; }
       
-      // Mittelpunkt des Bereichs berechnen und Karte darauf zentrieren
       var centerLat = (latMin + latMax) / 2;
       var centerLon = (lonMin + lonMax) / 2;
       map.setView([centerLat, centerLon], 4);
       
-      // Vorherige Rechtecke und Marker entfernen
       if (rectangleLayer) { map.removeLayer(rectangleLayer); }
       if (markerLayer) { map.removeLayer(markerLayer); }
       
-      // Zeichne ein transparentes rotes Rechteck als Bereichsmarkierung
       rectangleLayer = L.rectangle([[latMin, lonMin], [latMax, lonMax]], {
         color: "red",
         weight: 2,
         fillOpacity: 0.2
       }).addTo(map);
       
-      // Zufällige Koordinaten innerhalb des Bereichs generieren
       var randomLat = Math.random() * (latMax - latMin) + latMin;
       var randomLon = Math.random() * (lonMax - lonMin) + lonMin;
       
-      // Marker am zufälligen Punkt setzen
       markerLayer = L.marker([randomLat, randomLon]).addTo(map)
         .bindPopup("Zufällige Position: " + randomLat.toFixed(2) + ", " + randomLon.toFixed(2))
         .openPopup();
       
-      // Ergebnis anzeigen
       document.getElementById('result').innerText = "Zufällige Position: " + randomLat.toFixed(2) + ", " + randomLon.toFixed(2);
     });
     
-    // Anzeige der Mauskoordinaten in Echtzeit
+    // Anzeige der aktuellen Mauskoordinaten
     map.on('mousemove', function(e) {
       var lat = e.latlng.lat.toFixed(2);
       var lng = e.latlng.lng.toFixed(2);
